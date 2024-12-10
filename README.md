@@ -1,8 +1,14 @@
 # StreetCrafter: Street View Synthesis with Controllable Video Diffusion Models
 
-### [Project Page](https://zju3dv.github.io/street_crafter) | [Paper](https://arxiv.org/pdf/2401.01339.pdf)
-> [StreetCrafter: Street View Synthesis with Controllable Video Diffusion Models](https://arxiv.org/abs/2401.01339)  
+### [Project Page](https://zju3dv.github.io/street_crafter) | [Paper](https://arxiv.org/list/cs.CV/recent)
+> [StreetCrafter: Street View Synthesis with Controllable Video Diffusion Models](https://arxiv.org/list/cs.CV/recent)  
 > Yunzhi Yan*, Zhen Xu*, Haotong Lin, Haian Jin, Haoyu Guo, Yida Wang, Kun Zhan, Xianpeng Lang, Hujun Bao, Xiaowei Zhou, Sida Peng (* equal contribution)
+
+
+
+https://github.com/user-attachments/assets/1f5fafb4-bf91-480b-be78-2183d1f347b6
+
+
 
 
 ### Pipeline
