@@ -279,11 +279,12 @@ class StreetGaussianModel(nn.Module):
             scalings.append(scaling_bkgd)
 
         for obj_name in self.graph_obj_list:
-            obj_model: GaussianModelActor = getattr(self, obj_name)
+            if self.get_visibility(obj_name):
+                obj_model: GaussianModelActor = getattr(self, obj_name)
 
-            scaling = obj_model.get_scaling
+                scaling = obj_model.get_scaling
 
-            scalings.append(scaling)
+                scalings.append(scaling)
             
         if self.get_visibility('sky'):
             scaling_sky = self.sky.get_scaling
@@ -303,19 +304,21 @@ class StreetGaussianModel(nn.Module):
         if len(self.graph_obj_list) > 0:
             rotations_local = []
             for i, obj_name in enumerate(self.graph_obj_list):
-                obj_model: GaussianModelActor = getattr(self, obj_name)
-                rotation_local = obj_model.get_rotation
-                rotations_local.append(rotation_local)
+                if self.get_visibility(obj_name):
+                    obj_model: GaussianModelActor = getattr(self, obj_name)
+                    rotation_local = obj_model.get_rotation
+                    rotations_local.append(rotation_local)
 
-            rotations_local = torch.cat(rotations_local, dim=0)
-            if cfg.mode == 'train':
-                rotations_local = rotations_local.clone()
-                rotations_flip = rotations_local[self.flip_mask]
-                if len(rotations_flip) > 0:
-                    rotations_local[self.flip_mask] = quaternion_raw_multiply(self.flip_matrix, rotations_flip)
-            rotations_obj = quaternion_raw_multiply(self.obj_rots, rotations_local)  # type: ignore
-            rotations_obj = torch.nn.functional.normalize(rotations_obj)
-            rotations.append(rotations_obj)
+            if len(rotations_local) > 0:    
+                rotations_local = torch.cat(rotations_local, dim=0)
+                if cfg.mode == 'train':
+                    rotations_local = rotations_local.clone()
+                    rotations_flip = rotations_local[self.flip_mask]
+                    if len(rotations_flip) > 0:
+                        rotations_local[self.flip_mask] = quaternion_raw_multiply(self.flip_matrix, rotations_flip)
+                rotations_obj = quaternion_raw_multiply(self.obj_rots, rotations_local)  # type: ignore
+                rotations_obj = torch.nn.functional.normalize(rotations_obj)
+                rotations.append(rotations_obj)
             
         if self.get_visibility('sky'):
             rotations_sky = self.sky.get_rotation
@@ -335,17 +338,19 @@ class StreetGaussianModel(nn.Module):
             xyzs_local = []
 
             for i, obj_name in enumerate(self.graph_obj_list):
-                obj_model: GaussianModelActor = getattr(self, obj_name)
-                xyz_local = obj_model.get_xyz
-                xyzs_local.append(xyz_local)
+                if self.get_visibility(obj_name):
+                    obj_model: GaussianModelActor = getattr(self, obj_name)
+                    xyz_local = obj_model.get_xyz
+                    xyzs_local.append(xyz_local)
 
-            xyzs_local = torch.cat(xyzs_local, dim=0)
-            if cfg.mode == 'train':
-                xyzs_local = xyzs_local.clone()
-                xyzs_local[self.flip_mask, self.flip_axis] *= -1
-            obj_rots = quaternion_to_matrix(self.obj_rots)
-            xyzs_obj = torch.einsum('bij, bj -> bi', obj_rots, xyzs_local) + self.obj_trans
-            xyzs.append(xyzs_obj)
+            if len(xyzs_local) > 0:
+                xyzs_local = torch.cat(xyzs_local, dim=0)
+                if cfg.mode == 'train':
+                    xyzs_local = xyzs_local.clone()
+                    xyzs_local[self.flip_mask, self.flip_axis] *= -1
+                obj_rots = quaternion_to_matrix(self.obj_rots)
+                xyzs_obj = torch.einsum('bij, bj -> bi', obj_rots, xyzs_local) + self.obj_trans
+                xyzs.append(xyzs_obj)
 
         if self.get_visibility('sky'):
             xyz_sky = self.sky.get_xyz
@@ -367,9 +372,10 @@ class StreetGaussianModel(nn.Module):
             features.append(features_bkgd)
 
         for i, obj_name in enumerate(self.graph_obj_list):
-            obj_model: GaussianModelActor = getattr(self, obj_name)
-            feature_obj = obj_model.get_features_fourier(self.frame)
-            features.append(feature_obj)
+            if self.get_visibility(obj_name):
+                obj_model: GaussianModelActor = getattr(self, obj_name)
+                feature_obj = obj_model.get_features_fourier(self.frame)
+                features.append(feature_obj)
             
         if self.get_visibility('sky'):
             features_sky = self.sky.get_features
@@ -388,9 +394,10 @@ class StreetGaussianModel(nn.Module):
             opacities.append(opacity_bkgd)
 
         for obj_name in self.graph_obj_list:
-            obj_model: GaussianModelActor = getattr(self, obj_name)
-            opacity = obj_model.get_opacity
-            opacities.append(opacity)
+            if self.get_visibility(obj_name):
+                obj_model: GaussianModelActor = getattr(self, obj_name)
+                opacity = obj_model.get_opacity
+                opacities.append(opacity)
             
         if self.get_visibility('sky'):
             opacity_sky = self.sky.get_opacity
@@ -487,6 +494,11 @@ class StreetGaussianModel(nn.Module):
             max_radii2D_model = radii[start:end]
             model.max_radii2D[visibility_model] = torch.max(
                 model.max_radii2D[visibility_model], max_radii2D_model[visibility_model])
+            
+    @torch.no_grad()
+    def set_max_radii2D_sky(self, radii, visibility_filter):
+        radii = radii.float()
+        self.sky.max_radii2D[visibility_filter] = torch.max(self.sky.max_radii2D[visibility_filter], radii[visibility_filter])
 
     @torch.no_grad()
     def add_densification_stats(self, viewspace_point_tensor, visibility_filter, viewpoint_cam=None):
@@ -506,9 +518,24 @@ class StreetGaussianModel(nn.Module):
             model.xyz_gradient_accum[visibility_model, 1:2] += torch.norm(viewspace_point_tensor_grad_model[visibility_model, 2:], dim=-1, keepdim=True)
             model.denom[visibility_model] += 1
 
+    @torch.no_grad()
+    def add_densification_stats_sky(self, viewspace_point_tensor, visibility_filter, viewpoint_cam=None):
+        if hasattr(viewspace_point_tensor, 'absgrad'):
+            viewspace_point_tensor_grad = torch.cat([viewspace_point_tensor.absgrad, viewspace_point_tensor.grad], dim=-1)
+            if viewspace_point_tensor_grad.ndim == 3: viewspace_point_tensor_grad = viewspace_point_tensor_grad[0]
+            viewspace_point_tensor_grad = viewspace_point_tensor_grad * 0.5 * torch.as_tensor([viewpoint_cam.image_width, viewpoint_cam.image_height, viewpoint_cam.image_width, viewpoint_cam.image_height]).to(viewspace_point_tensor_grad, non_blocking=True)
+        else:
+            viewspace_point_tensor_grad = viewspace_point_tensor.grad
+
+        visibility_model = visibility_filter
+        self.sky.xyz_gradient_accum[visibility_model, 0:1] += torch.norm(viewspace_point_tensor_grad[visibility_model, :2], dim=-1, keepdim=True)
+        self.sky.xyz_gradient_accum[visibility_model, 1:2] += torch.norm(viewspace_point_tensor_grad[visibility_model, 2:], dim=-1, keepdim=True)
+        self.sky.denom[visibility_model] += 1
+
     def densify_and_prune(self, max_grad, min_opacity, prune_big_points, exclude_list=[]):
         scalars = None
         tensors = None
+
         for model_name in self.model_name_id.keys():
             if startswith_any(model_name, exclude_list):
                 continue

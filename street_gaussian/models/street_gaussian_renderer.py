@@ -117,6 +117,9 @@ class StreetGaussianRenderer():
         if pc.include_sky:
             result_sky = self.render_sky(viewpoint_camera, pc, convert_SHs_python, compute_cov3D_python, scaling_modifier, override_color, parse_camera_again=False)
             result['rgb'] = result['rgb'] + result_sky['rgb'] * (1 - result['acc'])
+            result['viewspace_points_sky'] = result_sky['viewspace_points']
+            result['visibility_filter_sky'] = result_sky['visibility_filter']
+            result['radii_sky'] = result_sky['radii']
         elif pc.include_sky_cubemap:
             sky_color = pc.sky_cubemap(viewpoint_camera, result['acc'].detach()) # type: ignore
             # sky_color = pc.color_correction(viewpoint_camera, sky_color, use_sky=True) if use_color_correction else sky_color
@@ -127,7 +130,7 @@ class StreetGaussianRenderer():
 
         if cfg.mode != 'train':
             result['rgb'] = torch.clamp(result['rgb'], 0., 1.)
-
+        
         return result
 
     def render_novel_view(

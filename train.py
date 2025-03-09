@@ -3,12 +3,10 @@ import torch
 import random
 import time
 from random import randint
-
 from create_scene import create_scene
 from street_gaussian.models.street_gaussian_model import StreetGaussianModel
 from street_gaussian.models.scene import Scene
 from street_gaussian.models.street_gaussian_renderer import StreetGaussianRenderer
-
 from street_gaussian.utils.loss_utils import l1_loss, l2_loss, psnr, ssim, huber
 from street_gaussian.utils.img_utils import save_img_torch, visualize_depth_numpy
 from street_gaussian.utils.general_utils import safe_state
@@ -282,10 +280,15 @@ def training():
 
             # Densification
             if iteration < optim_args.densify_until_iter:
-                gaussians.set_visibility(include_list=list(set(gaussians.model_name_id.keys()) - set(['sky'])))
                 gaussians.set_max_radii2D(radii, visibility_filter)
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter, viewpoint_cam)
-
+                if 'viewspace_points_sky' in render_pkg:
+                    viewspace_point_tensor_sky = render_pkg['viewspace_points_sky']
+                    visibility_filter_sky = render_pkg['visibility_filter_sky'] 
+                    radii_sky = render_pkg['radii_sky']
+                    gaussians.set_max_radii2D_sky(radii_sky, visibility_filter_sky)
+                    gaussians.add_densification_stats_sky(viewspace_point_tensor_sky, visibility_filter_sky, viewpoint_cam)
+            
                 prune_big_points = iteration > optim_args.opacity_reset_interval and optim_args.prune_big_points
 
                 if iteration > optim_args.densify_from_iter:
