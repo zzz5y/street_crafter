@@ -491,7 +491,7 @@ def main():
         
     else:
         scene_ids_list = [str(scene_id).zfill(3) for scene_id in args.scene_ids]
-        with open("data_processor/waymo_processor/waymo_train_list.txt") as f:
+        with open("waymo_processor/waymo_train_list.txt") as f:
             training_files = f.read().splitlines()
 
         # 构造 tfrecord 文件路径列表

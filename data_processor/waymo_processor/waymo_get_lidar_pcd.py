@@ -402,29 +402,57 @@ def save_lidar(root_dir, seq_path, seq_save_dir):
     
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_dir', type=str, default='/nas/home/yanyunzhi/waymo/training')
-    parser.add_argument('--save_dir', type=str, default='./test_data/')
+    parser.add_argument('--root_dir', type=str, default='/media/ry/rayan/street_crafter/data/waymo/raw')
+    parser.add_argument('--save_dir', type=str, default='/media/ry/rayan/street_crafter/data/waymo/processed')
+    parser.add_argument('--scene_ids', type=int, default=None,nargs="+",help="scene ids to be processed, a list of integers separated by space. Range: [0, 798] for training, [0, 202] for validation",)
     parser.add_argument('--skip_existing', action='store_true')
     args = parser.parse_args()
     
     root_dir = args.root_dir
     save_dir = args.save_dir
 
-    all_sequence_names = sorted([x for x in os.listdir(root_dir) if x.endswith('.tfrecord')])
-    all_sequence_paths = [os.path.join(root_dir, x) for x in all_sequence_names]
-    for i, sequence_path in enumerate(all_sequence_paths):
-        print(f'{i}: {sequence_path}')
-        sequence_save_dir = os.path.join(save_dir, str(i).zfill(3))
-        if os.path.exists(os.path.join(sequence_save_dir, 'lidar/depth')) and args.skip_existing:
-            print(f'lidar pcd exists for {sequence_path}, skipping...')
-            continue
-                
-        save_lidar(
-            root_dir=root_dir,
-            seq_path=sequence_path,
-            seq_save_dir=sequence_save_dir,
-        )
+    if args.scene_ids== None:
+        all_sequence_names = sorted([x for x in os.listdir(root_dir) if x.endswith('.tfrecord')])
+        all_sequence_paths = [os.path.join(root_dir, x) for x in all_sequence_names]
+        for i, sequence_path in enumerate(all_sequence_paths):
+            print(f'{i}: {sequence_path}')
+            sequence_save_dir = os.path.join(save_dir, str(i).zfill(3))
+            if os.path.exists(os.path.join(sequence_save_dir, 'lidar/depth')) and args.skip_existing:
+                print(f'lidar pcd exists for {sequence_path}, skipping...')
+                continue
+                    
+            save_lidar(
+                root_dir=root_dir,
+                seq_path=sequence_path,
+                seq_save_dir=sequence_save_dir,
+            )
+    else:
+        scene_ids_list = [str(scene_id).zfill(3) for scene_id in args.scene_ids]
+        with open("waymo_processor/waymo_train_list.txt") as f:
+            training_files = f.read().splitlines()
 
+            # 构造 tfrecord 文件路径列表
+            tfrecord_pathnames = [f"{root_dir}/{f}.tfrecord" for f in training_files]
+
+            # 根据 scene_ids 从 tfrecord_pathnames 中获取对应的路径
+            pathname_list = [tfrecord_pathnames[int(item)] for item in scene_ids_list]
+
+            # 输出结果
+            for pathname in pathname_list:
+                print("pathname:", pathname)
+            print("pathname_list:", pathname_list)
+
+            all_sequence_paths = pathname_list
+            print("all_sequence_path:", all_sequence_paths)
+
+        for i, sequence_path in enumerate(all_sequence_paths):
+            print(f'{i}: {sequence_path}')
+            sequence_save_dir = os.path.join(save_dir,scene_ids_list[i].zfill(3))
+            save_lidar(
+                root_dir=root_dir,
+                seq_path=sequence_path,
+                seq_save_dir=sequence_save_dir,
+            )
     
 if __name__ == '__main__':
     main()
