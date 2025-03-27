@@ -14,7 +14,7 @@ import json
 # sample data at 2Hz (5frames)
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_dir', type=str, default='/lpai/volumes/jointmodel/yanyunzhi/data/waymo')
+    parser.add_argument('--root_dir', type=str, default='../data/waymo/')
     parser.add_argument('--split', type=str, default='train')
     parser.add_argument('--scene_ids', type=int, nargs='+', default=None)
     parser.add_argument('--postfix', type=str, default=None)
@@ -23,7 +23,7 @@ def main():
 
     root_dir = args.root_dir
     if args.split == 'train':
-        data_dir = os.path.join(root_dir, 'training_set_processed')
+        data_dir = os.path.join(root_dir, 'processed')
         save_path = 'meta_info_train.json'
     elif args.split == 'val':
         data_dir = os.path.join(root_dir, 'validation_set_processed')
