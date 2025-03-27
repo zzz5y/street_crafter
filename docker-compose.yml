@@ -1,0 +1,29 @@
+services:
+  street_crafter:
+    container_name: street_crafter
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    volumes:
+      - ${PWD}:/host
+      #- /data/zsy_data/:./data   # 将主机的实际路径挂载到容器内的 ./data
+    
+    ipc: host
+  
+    entrypoint: ["/entrypoint.sh"]
+    command: ["bash"]
+    
+    network_mode: host  # 这里使用 host 网络模式
+    environment:
+      - HTTP_PROXY=http://127.0.0.1:7897
+      - HTTPS_PROXY=http://127.0.0.1:7897

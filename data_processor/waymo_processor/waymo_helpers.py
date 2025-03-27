@@ -60,6 +60,7 @@ class ParquetReader:
     def read(self, tag: str):
         import dask.dataframe as dd
         """Creates a Dask DataFrame for the component specified by its tag."""
+        print(f"{self.dataset_dir}/{tag}/{self.context_name}")
         paths = glob.glob(f"{self.dataset_dir}/{tag}/{self.context_name}.parquet")
         return dd.read_parquet(paths, npartitions=self.nb_partitions)  # type: ignore
 
