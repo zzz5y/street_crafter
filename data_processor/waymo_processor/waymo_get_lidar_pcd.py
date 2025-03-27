@@ -402,8 +402,8 @@ def save_lidar(root_dir, seq_path, seq_save_dir):
     
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_dir', type=str, default='/media/ry/rayan/street_crafter/data/waymo/raw')
-    parser.add_argument('--save_dir', type=str, default='/media/ry/rayan/street_crafter/data/waymo/processed')
+    parser.add_argument('--root_dir', type=str, default='../data/waymo/raw')
+    parser.add_argument('--save_dir', type=str, default='../data/waymo/processed')
     parser.add_argument('--scene_ids', type=int, default=None,nargs="+",help="scene ids to be processed, a list of integers separated by space. Range: [0, 798] for training, [0, 202] for validation",)
     parser.add_argument('--skip_existing', action='store_true')
     args = parser.parse_args()

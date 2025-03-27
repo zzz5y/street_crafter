@@ -283,7 +283,7 @@ class WaymoLiDARRenderer(object):
             
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', type=str, default='./waymo_processor/training_set_processed')
+    parser.add_argument('--data_dir', type=str, default='../data/waymo/processed')
     parser.add_argument('--skip_existing', action='store_true', help='Skip existing files')
     parser.add_argument('--delta_frames', type=int, default=10)
     parser.add_argument('--cams', type=int, nargs='+', default=[0])
