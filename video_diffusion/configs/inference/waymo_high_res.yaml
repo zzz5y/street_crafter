@@ -5,7 +5,7 @@ model:
     guidance_key: guide_seq
     scale_factor: 0.18215
     disable_first_stage_autocast: True
-    en_and_decode_n_samples_a_time: 14
+    en_and_decode_n_samples_a_time: 1
     num_frames: &num_frames 25
 
     denoiser_config:
